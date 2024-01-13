@@ -1,6 +1,4 @@
-# offlineMapTiles
-
-Map Tiles Download
+# MapTilesDownloader
 
 ![demo.gif](https://github.com/darkdragonblade/MapTilesDownloader/blob/main/static/demo.gif?raw=true)
 
