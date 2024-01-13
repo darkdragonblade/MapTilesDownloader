@@ -2,7 +2,7 @@
 
 Map Tiles Download
 
-![demo.gif](https://github.com/darkdragonblade/offlineMapTiles/blob/main/static/demo.gif?raw=true)
+![demo.gif](https://github.com/darkdragonblade/MapTilesDownloader/blob/main/static/demo.gif?raw=true)
 
 ---
 
