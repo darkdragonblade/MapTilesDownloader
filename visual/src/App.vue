@@ -1,7 +1,12 @@
 <template>
   <div id="app">
-    <main id="map"></main>
-    <aside>
+    <aside class="left">
+      <main id="map"></main>
+      <!-- <div class="map-tooltip">
+        Use ALT + drag to select requested area on the map
+      </div> -->
+    </aside>
+    <aside class="right">
       <section class="flex">
         <div class="step">1</div>
         <div class="label">Select a Region</div>
@@ -33,33 +38,8 @@
             />
           </div>
         </div>
-        <span style="font-size: 12px; color: #989898">Zoom setting</span>
-        <a-row>
-          <a-col :span="12">
-            <a-slider v-model:value="minZoom" :min="min" :max="max" />
-          </a-col>
-          <a-col :span="4">
-            <a-input-number
-              v-model:value="minZoom"
-              :min="min"
-              :max="max"
-              style="margin-left: 16px"
-            />
-          </a-col>
-        </a-row>
-        <a-row>
-          <a-col :span="12">
-            <a-slider v-model:value="maxZoom" :min="min" :max="max" />
-          </a-col>
-          <a-col :span="4">
-            <a-input-number
-              v-model:value="maxZoom"
-              :min="min"
-              :max="max"
-              style="margin-left: 16px"
-            />
-          </a-col>
-        </a-row>
+        <span style="font-size: 12px; color: #989898">Zoom Range</span>
+        <a-slider v-model:value="zoom" range :min="min" :max="max" />
       </section>
 
       <section class="flex">
@@ -75,9 +55,10 @@
 
 <script>
 import API from "./api/common";
-
+import Rect from "./components/drawRect";
 let map = void 0;
-
+let keydownZ = false;
+const rect = new Rect();
 export default {
   data() {
     return {
@@ -107,8 +88,6 @@ export default {
       ],
       mapType: 1,
       zoom: [0, 15],
-      minZoom: 0,
-      maxZoom: 10,
       min: 0,
       max: 20,
       loading: false,
@@ -148,6 +127,12 @@ export default {
       });
       map.addControl(new mapboxgl.NavigationControl());
       this.toggleTileBoundaries();
+      rect.enable(map);
+
+      map.on("zoom", () => {
+        const zoomLevel = map.getZoom();
+        console.log("缩放级别已更改为:", Math.ceil(zoomLevel));
+      });
     },
     maoTypeChange() {
       map.remove();
@@ -161,8 +146,8 @@ export default {
         this.loading = true;
         const res = await API.downloadTiles({
           type: this.mapType,
-          minZoom: this.minZoom,
-          maxZoom: this.maxZoom,
+          minZoom: this.zoom[0],
+          maxZoom: this.zoom[1],
         });
       } finally {
         this.loading = false;
@@ -184,11 +169,17 @@ export default {
   overflow: hidden;
 }
 
-main {
+.left {
+  position: relative;
   flex: 1;
 }
 
-aside {
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+.right {
   width: 300px;
   padding: 10px 0;
 }
@@ -225,4 +216,35 @@ section {
   font-size: 12px;
   box-shadow: 0 0 6px #9a9a9a;
 }
+
+.map-tooltip {
+  background: hsla(0, 0%, 100%, 0.8);
+  left: 50%;
+  margin-left: -210px;
+  padding: 10px;
+  position: absolute;
+  text-align: center;
+  top: 10px;
+  width: 420px;
+  z-index: 10;
+  color: #6b7c92;
+  font-size: 16px;
+  user-select: none;
+}
 </style>
+
+<!--  
+  
+  5/29/16
+
+  6/58/32 , 6/59/32
+
+  6/58/33 , 6/59/33
+
+  5/30/17
+
+  6/60/34 , 6/61/34
+
+  6/60/35 , 6/61/35 
+    
+-->
