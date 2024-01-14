@@ -14,7 +14,7 @@
           v-model:value="mapType"
           style="width: 100%"
           placeholder="Select please..."
-          @change="maoTypeChange"
+          @change="mapTypeChange"
         >
           <a-select-option
             v-for="(item, index) in tilesOrigin"
@@ -38,15 +38,63 @@
             />
           </div>
         </div>
-        <span style="font-size: 12px; color: #989898">Zoom Range</span>
-        <a-slider v-model:value="zoom" range :min="min" :max="max" />
+        <div
+          class="flex flex-align-center flex-justify-between"
+          style="gap: 8px"
+        >
+          <span style="font-size: 12px; color: #989898">Zoom Level</span>
+          <div class="flex flex-align-center flex-1" style="gap: 8px">
+            <span>from</span>
+            <a-input-number
+              :min="tilesOrigin[mapType - 1].minZoom"
+              :max="max"
+              v-model:value="minZoom"
+            />
+            <span>to</span>
+            <a-input-number
+              :min="tilesOrigin[mapType - 1].minZoom"
+              :max="max"
+              v-model:value="maxZoom"
+            />
+          </div>
+        </div>
+        <div class="flex flex-align-center flex-justify-between">
+          <span style="font-size: 12px; color: #989898">customize Tiles</span>
+          <a-switch v-model:checked="customize" />
+        </div>
+        <div
+          v-show="customize"
+          class="flex flex-align-center flex-justify-between"
+          style="gap: 8px"
+        >
+          <span style="font-size: 12px; color: #989898">Row Range</span>
+          <div class="flex flex-align-center flex-1" style="gap: 8px">
+            <span>from</span>
+            <a-input-number :min="0" v-model:value="minRow" />
+            <span>to</span>
+            <a-input-number :min="0" v-model:value="maxRow" />
+          </div>
+        </div>
+        <div
+          v-show="customize"
+          class="flex flex-align-center flex-justify-between"
+          style="gap: 8px"
+        >
+          <span style="font-size: 12px; color: #989898">Column Range</span>
+          <div class="flex flex-align-center flex-1" style="gap: 8px">
+            <span>from</span>
+            <a-input-number :min="0" v-model:value="minColumn" />
+            <span>to</span>
+            <a-input-number :min="0" v-model:value="maxColumn" />
+          </div>
+        </div>
       </section>
 
       <section class="flex">
         <div class="step">3</div>
         <div class="label">More Options(+)</div>
         <a-button type="primary" :loading="loading" @click="download"
-          >DOWNLOAD</a-button
+          >DOWNLOAD({{ customize ? "Customize" : "All" }})</a-button
         >
       </section>
     </aside>
@@ -57,7 +105,6 @@
 import API from "./api/common";
 import Rect from "./components/drawRect";
 let map = void 0;
-let keydownZ = false;
 const rect = new Rect();
 export default {
   data() {
@@ -66,30 +113,49 @@ export default {
         {
           url: "https://tile-b.openstreetmap.fr/hot/{z}/{x}/{y}.png",
           // url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-          // url: "https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=QPAErv2lUwkeKOVzcY3w",
+
           name: "openstreetmap",
+          minZoom: 0,
         },
+        // {
+        //   url: "https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=QPAErv2lUwkeKOVzcY3w",
+        //   name: "maptiler",
+        //   minZoom: 0,
+        // },
         {
           url: "https://a.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png",
           name: "basemaps",
+          minZoom: 0,
         },
         {
           url: "https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png",
           name: "stadiamaps",
+          minZoom: 0,
         },
         {
           url: "https://server.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}.png",
           name: "arcgis",
+          minZoom: 0,
         },
         // {
         //   url: "http://mt1.google.com/vt/lyrs=m&scale=2&hl=zh-en&gl=cn&x={x}&y={y}&z={z}",
         //   name: "google",
         // },
+        // {
+        //   url: "http://wprd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}",
+        //   name: "autonavi(高德)",
+        //   minZoom: 2,
+        // },
       ],
       mapType: 1,
-      zoom: [0, 15],
-      min: 0,
+      minZoom: 0,
+      maxZoom: 15,
       max: 20,
+      minRow: 0,
+      maxRow: 0,
+      minColumn: 0,
+      maxColumn: 0,
+      customize: false,
       loading: false,
       showTileBoundaries: false,
     };
@@ -99,8 +165,9 @@ export default {
       map = new mapboxgl.Map({
         container: "map",
         center: [0, 0],
-        zoom: 0,
-        maxZoom: 14,
+        zoom: this.tilesOrigin[this.mapType - 1].minZoom,
+        minZoom: this.tilesOrigin[this.mapType - 1].minZoom,
+        maxZoom: 20,
         pitch: 0,
         antialias: true,
         style: {
@@ -128,13 +195,8 @@ export default {
       map.addControl(new mapboxgl.NavigationControl());
       this.toggleTileBoundaries();
       rect.enable(map);
-
-      map.on("zoom", () => {
-        const zoomLevel = map.getZoom();
-        console.log("缩放级别已更改为:", Math.ceil(zoomLevel));
-      });
     },
-    maoTypeChange() {
+    mapTypeChange() {
       map.remove();
       this.initMap();
     },
@@ -144,10 +206,15 @@ export default {
     async download() {
       try {
         this.loading = true;
-        const res = await API.downloadTiles({
+        await API.downloadTiles({
           type: this.mapType,
-          minZoom: this.zoom[0],
-          maxZoom: this.zoom[1],
+          minZoom: this.minZoom,
+          maxZoom: this.maxZoom,
+          minRow: this.minRow,
+          maxRow: this.maxRow,
+          minColumn: this.minColumn,
+          maxColumn: this.maxColumn,
+          custom: this.customize,
         });
       } finally {
         this.loading = false;
@@ -180,8 +247,10 @@ export default {
 }
 
 .right {
-  width: 300px;
+  width: 340px;
   padding: 10px 0;
+  display: flex;
+  flex-direction: column;
 }
 
 :deep(.ant-radio-wrapper) {

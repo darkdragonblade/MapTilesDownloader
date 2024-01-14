@@ -30,12 +30,6 @@ canvas{
   outline: none;
 }
 
-*[disabled="true"]{
-  opacity: 0.5;
-  pointer-events: none;
-  transition: all .25s;
-}
-
 .flex{
   display: flex;
 }
