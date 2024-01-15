@@ -47,13 +47,13 @@
             <span>from</span>
             <a-input-number
               :min="tilesOrigin[mapType - 1].minZoom"
-              :max="max"
+              :max="tilesOrigin[mapType - 1].maxZoom"
               v-model:value="minZoom"
             />
             <span>to</span>
             <a-input-number
               :min="tilesOrigin[mapType - 1].minZoom"
-              :max="max"
+              :max="tilesOrigin[mapType - 1].maxZoom"
               v-model:value="maxZoom"
             />
           </div>
@@ -112,45 +112,44 @@ export default {
       tilesOrigin: [
         {
           url: "https://tile-b.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-          // url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-
           name: "openstreetmap",
           minZoom: 0,
+          maxZoom: 20,
         },
-        // {
-        //   url: "https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=QPAErv2lUwkeKOVzcY3w",
-        //   name: "maptiler",
-        //   minZoom: 0,
-        // },
         {
           url: "https://a.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}.png",
           name: "basemaps",
           minZoom: 0,
+          maxZoom: 20,
         },
         {
           url: "https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png",
           name: "stadiamaps",
           minZoom: 0,
+          maxZoom: 20,
         },
         {
           url: "https://server.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}.png",
           name: "arcgis",
           minZoom: 0,
+          maxZoom: 20,
         },
-        // {
-        //   url: "http://mt1.google.com/vt/lyrs=m&scale=2&hl=zh-en&gl=cn&x={x}&y={y}&z={z}",
-        //   name: "google",
-        // },
-        // {
-        //   url: "http://wprd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}",
-        //   name: "autonavi(高德)",
-        //   minZoom: 2,
-        // },
+        {
+          url: "http://mt1.google.com/vt/lyrs=m&scale=2&hl=zh-en&gl=cn&x={x}&y={y}&z={z}",
+          name: "google",
+          minZoom: 0,
+          maxZoom: 20,
+        },
+        {
+          url: "http://wprd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}",
+          name: "autonavi(高德)",
+          minZoom: 2,
+          maxZoom: 19,
+        },
       ],
       mapType: 1,
       minZoom: 0,
       maxZoom: 15,
-      max: 20,
       minRow: 0,
       maxRow: 0,
       minColumn: 0,
@@ -162,12 +161,15 @@ export default {
   },
   methods: {
     initMap() {
+      const { minZoom, maxZoom, url } = this.tilesOrigin[this.mapType - 1];
+      this.minZoom = minZoom;
+      this.maxZoom = maxZoom;
       map = new mapboxgl.Map({
         container: "map",
         center: [0, 0],
-        zoom: this.tilesOrigin[this.mapType - 1].minZoom,
-        minZoom: this.tilesOrigin[this.mapType - 1].minZoom,
-        maxZoom: 20,
+        zoom: minZoom,
+        minZoom,
+        maxZoom: maxZoom - 1,
         pitch: 0,
         antialias: true,
         style: {
@@ -177,7 +179,7 @@ export default {
           sources: {
             "osm-tiles": {
               type: "raster",
-              tiles: [this.tilesOrigin[this.mapType - 1].url],
+              tiles: [url],
               tileSize: 256,
             },
           },
@@ -190,7 +192,6 @@ export default {
             },
           ],
         },
-        // style: "http://localhost:1234/api/styles/style"
       });
       map.addControl(new mapboxgl.NavigationControl());
       this.toggleTileBoundaries();
@@ -207,7 +208,7 @@ export default {
       try {
         this.loading = true;
         await API.downloadTiles({
-          type: this.mapType,
+          url: this.tilesOrigin[this.mapType - 1].url,
           minZoom: this.minZoom,
           maxZoom: this.maxZoom,
           minRow: this.minRow,
@@ -301,19 +302,3 @@ section {
   user-select: none;
 }
 </style>
-
-<!--  
-  
-  5/29/16
-
-  6/58/32 , 6/59/32
-
-  6/58/33 , 6/59/33
-
-  5/30/17
-
-  6/60/34 , 6/61/34
-
-  6/60/35 , 6/61/35 
-    
--->

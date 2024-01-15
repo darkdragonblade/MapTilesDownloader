@@ -116,10 +116,8 @@ export default class DrawRect {
     getTileCoordinate = (lng, lat, zoom) => {
         const totalTiles = Math.pow(2, zoom);
 
-        // 将经度值转换为瓦片X坐标
         let x = Math.floor(((lng + 180) / 360) * totalTiles);
 
-        // 将纬度值转换为瓦片Y坐标
         let y = Math.floor(
             ((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) *
             totalTiles
